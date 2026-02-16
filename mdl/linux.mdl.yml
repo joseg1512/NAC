@@ -1,0 +1,92 @@
+---
+metadata:                          # SECCION de metadatos de la imagen
+  name: &image_name ""             # nombre corto SO + .img, ejemplo: rocky10x.img
+  purpose: ""                      # propósito o descripción general de la imagen
+  version: ""                      # ver esquema de versionamiento de imágenes
+  role: "model"                    # esta es una plantilla para instalar imágenes base
+  operating_system: ""             # ejemplo: Ubuntu 24.04, Rocky 10.x
+  inheritance:                     # imágenes base o iso
+    - ""                           # ejemplos: rocky-10.1-x86_64-minimal.iso, linux_base.img
+  creation_date: ""                # fecha creación imagen, formato yyyy-mm-dd
+  doc_wiki_main: ""                # URL de la imagen en la wiki de documentación
+  doc_wiki_repo: ""                # URL de la imagen en la wiki del repositorio (opcional)
+  content:                         # descripción de funciones principales de la imagen
+    - ""                           # ejemplo Sistema Operativo, Servidor web
+
+hardware:                          # SECCION de configuración de hardware
+  mainboard:                       # recursos de tarjeta madre
+    arch: ""                       # x86 | x86_64
+    cpu: 0                         # cantidad de procesadores
+    ram: ""                        # cantidad de memoria RAM (MB o GB), ejemplo: 4096 MB
+  storage:                         # recursos de almacenamiento
+    - disk_id: ""                  # identificador disco, ejemplo: system | database
+      action: ""                   #  agregar | remover
+      disk_size: ""                # capacidad disco (GB o TB), ejemplo: 50 GB
+      provisioning: ""             # thin | thick(lazily zeroed) thick(eagerly zeroed)
+      partitioning: ""             # automatic | manual
+      partitions:                  # particionamiento del disco
+        - label: ""                # efi | boot | system | data
+          type: ""                 # fixed | lvm | raid | fs
+          extensible: ""           # true | false
+          partition_size: ""       # tamaño de la partición  
+  network:                         # recursos de comunicaciones de red
+    nics: 0                        # cantidad de interfaces de red
+
+installer_options:                 # SECCION de opciones de instalación de la imagen
+  install_language: ""             # idioma para instalación, ejemplo: English (United States)
+  system_language:  ""             # idioma sistema instalado, ejemplo: English (United States)
+  keyboard_layout: ""              # idioma configuración del teclado, ejemplo: English (US)
+  timezone: ""                     # Zona horaria para sistema, ejemplo: America/Costa_Rica
+  software_profile: ""             # Perfil de software para imagen base
+
+networking:                        # SECCION de configuración de la red
+  interfaces:                      # lista de interfaces de red
+    - interface: ""                # internet | perimeter | local | management
+      action: ""                   #  agregar | remover
+      type: ""                     # ethernet | pppp | tunnel
+      vlan: ""                     # VLAN asociada a la interfaz
+      required: ""                 # true | false, indica si la configuración es requerida
+      method: ""                   # static | dhcp
+      ipv4:                        # direccionamiento IPv4 de la interfaz
+        enabled: ""                # true | false
+        address: ""                 # direccion_ip/máscara_red, ejemplo: 172.24.50.11/24
+        gateway: ""                # direccion_gateway, ejemplo: 172.24.50.1
+        dns:                       # direccion de servidores DNS
+          - ""                     # dirección_ip de servidor DNS, ejemplo: 8.8.8.8
+
+  hostname:                        # configuración de host
+      name: *image_name            # nombre de host, siempre igual a la imagen base
+
+users:                             # SECCION usuarios requeridos en plataforma linux
+  - username: ""                   # usuario del sistema
+    action: ""                     #  agregar | modificar | remover
+    disable_console: ""            # true | false, acceso a la consola local
+    groups:                        # todos los grupos adicionales del usuario (no parcial)
+      - ""
+
+applications:                      # SECCION aplicaciones de software
+  - group: ""                      # nombre corto del grupo de paquetes
+    action: ""                     # agregar | remover
+    description: >                 # descripción de los pa
+      Descripción paquetes
+    packages:                      # lista de paquetes
+      - ""
+
+services:                          # SECCION configuración de servicios en ejecución
+  disable:                         # servicios que deben ser deshabilitados
+    - ""
+  enable:                          # servicios que deben ser habilitados
+    - ""
+
+security:                          # SECCION configuración de controles de seguridad
+  selinux: ""                      # unavailable | disabled | permissive | enforcing
+  firewall: ""                     # enabled | disabled
+
+management:                        # SECCION de configuración de servicios de gestión
+  ssh:                             # configuración de ssh
+    disable:                       # usuarios con acceso remoto deshabilitado
+      - ""
+    enable:                        # usuarios con acceso remoto habilitado
+      - ""
+---
+

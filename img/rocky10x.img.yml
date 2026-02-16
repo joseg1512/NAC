@@ -1,0 +1,111 @@
+---
+metadata:
+  name: &name "rocky10x.img"
+  purpose: "Imagen base para servicios de gestión de la NAC"
+  version: "1.0"
+  role: "base"
+  operating_system: "Rocky Linux 10.x"
+  inheritance:
+    - linux.mdl
+    - rocky-10.1-x86_64-minimal.iso
+  creation_date: "2025-12-31"
+  doc_wiki_main: ""    # PENDIENTE
+  doc_wiki_repo: ""    # PENDIENTE
+  content:
+    - "Sistema Operativo"
+    - "Herramientas administracion de host"
+
+hardware:
+  mainboard:
+    arch: x86_64
+    cpu: 2
+    ram: "4096 MB"
+  storage:
+    - disk_id: "system"
+      action: "agregar"
+      disk_size: "50 GB"
+      provisioning: "thin"
+      partitioning: "automatic"
+      partitions:
+        - label: efi
+          type: fixed
+          extensible: false
+          partition_size: 
+        - label: boot
+          type: fixed
+          extensible: false
+          partition_size: 
+        - label: system
+          type: lvm
+          extensible: true 
+          partition_size: 
+  network:
+    nics: 1
+
+installer_options:
+  install_language: "English (United States)" 
+  system_language: "English (United States)"
+  keyboard_layout: "English (US)"
+  timezone: "America/Costa_Rica"
+  software_profile: "minimal"
+
+networking: 
+  interfaces:
+    - interface: "internet"
+      action: "agregar"
+      type: "ethernet"
+      vlan: "1050"
+      required: "true"
+      method: "static"
+      ipv4:
+        enabled: "true"
+        address: "172.24.50.11/24"
+        gateway: "172.24.50.1"
+        dns:
+          - "8.8.8.8"
+
+  hostname: 
+      name: *name
+
+users:                             
+  - username: "root"      
+    action: "agregar"         
+    disable_console: "true"
+  - username: "nadmin"
+    action: "agregar"             
+    disable_console: "false"       
+    groups:                        
+      - "wheel"                    
+
+applications:
+  - group: "aplicaciones gestión"
+    action: "agregar"
+    description: >
+      El repositorio EPEL es requerido para la mayoria de aplicaciones.
+      Se incluyen herramientas básicas de gestión del equipo y la red.
+    packages:
+      - "net-tools"
+      - "open-vm-tools"
+      - "mc"
+      - "mlocate"
+      - "epel-release"
+
+services:
+  disable: 
+    - "firewalld"
+  enable:
+    - "nftables"
+    - "sshd"
+
+security:
+  selinux: "enforcing"
+  firewall: enabled
+
+management:
+  ssh:
+    disable:
+      - "root"
+    enable¨:
+      - "nadmin"
+---
+

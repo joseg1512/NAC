@@ -1,0 +1,97 @@
+---
+
+metadata:
+  name: &name "mariadb.mdl"
+  purpose: "Imagen base para servicios de base de datos MariaDB de la NAC"
+  version: "1.0"
+  role: "service"
+  inheritance:
+    - rocky10x.img
+  creation_date: "2026-01-18"
+  content:
+    - "Servidor de base de datos MariaDB"
+
+hardware:
+  mainboard:
+    cpu: 4
+    ram: "8192 MB"
+  storage:
+    - disk_id: "database"
+      action: "agregar"
+      disk_size: "150 GB"
+      provisioning: "thin"
+      partitioning: "manual"
+        - label: /var/lib/mysql
+        - type: lvm
+        - extensible: true
+        - partition_size: 150
+   network:
+     nics: 2
+
+applications:
+  - group: "repositorios mariadb"
+    action: "add"
+    description: >
+      Repositorio oficial de MariaDB.
+      Incluye paquetes para instalación de paquetes de MariaDB.
+    urls:
+      - "https://dlm.mariadb.com/enterprise-release-helpers/mariadb_es_repo_setup"
+  
+  - group: "motor base de datos"
+    action: "add"
+    description: >
+      Motor de base de datos MariaDB y herramientas cliente.
+    packages:
+      - "mariadb-server"
+      - "mariadb-client"
+
+    - group: "selinux policies"
+    action: "add"
+    description: >
+      Paquetes para gestión de políticas y contextos SELinux.
+    packages:
+      - "policycoreutils"
+      - "policycoreutils-python-utils"
+
+services:
+  enable:
+    - "mariadb"
+
+security:
+  selinux:
+    mode: "enforcing"
+    process_domain: "mysqld_t"
+    policy_module:
+      name: "mariadb"
+      path: "/usr/share/mariadb/policy/selinux/mariadb.pp"
+      required: true
+    file_contexts:
+      - resource: "datadir"
+        context_type: "mysqld_db_t"
+      - resource: "logs"
+        context_type: "mysqld_log_t"
+      - resource: "config"
+        context_type: "mysqld_etc_t"
+      - resource: "socket"
+        context_type: "mysqld_var_run_t"
+    port_contexts:
+      - port: 3306
+        protocol: "tcp"
+        context_type: "mysqld_port_t"
+    tmpfs_access:
+      enabled: false
+
+  encryption:
+    cryptography_library:
+      enable: true
+    data_in_transit:
+      enabled: false
+    data_at_rest:
+      enabled: false
+      key_management_plugin: "file"
+
+  mariadb:
+    d
+  firewall: "enabled"
+
+---

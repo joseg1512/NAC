@@ -1,0 +1,29 @@
+4---
+
+metadata:
+  name: &name "keepalived.img"
+  purpose: "Imagen para servidores MariaDB con alta disponibilidad mediante VIP"
+  version: "1.0"
+  role: "model"
+  inheritance:
+    - mariadb.img
+  creation_date: "2026-xx-xx"
+  content:
+    - "Alta disponibilidad con VIPs"
+
+hostname:
+  name: *name
+
+applications:
+  - group: "alta disponibilidad"
+    action: "agregar"
+    description: >
+      Keepalived para gestión de VIP failover automático.
+    packages:
+      - "keepalived"
+
+services:
+  enable:
+    - "keepalived"
+
+---

@@ -1,0 +1,20 @@
+security:
+  selinux:
+    mode: "enforcing"
+    domain: "mysqld_t"
+    policy_module:
+      name: "mariadb"
+      path: "/usr/share/mariadb/policy/selinux/mariadb.pp"
+      required: true
+    file_contexts:
+      datadir: "mysqld_db_t"
+      logs: "mysqld_log_t"
+      config: "mysqld_etc_t"
+      socket: "mysqld_var_run_t"
+    port_contexts:
+      - port: 3306
+        protocol: "tcp"
+        type: "mysqld_port_t"
+    tmpfs_access:
+      enabled: false
+  firewall: "enabled"
