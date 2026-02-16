@@ -25,8 +25,8 @@ hardware:
         - type: lvm
         - extensible: true
         - partition_size: 150
-   network:
-     nics: 2
+  network:
+    nics: 2
 
 applications:
   - group: "repositorios mariadb"
@@ -73,7 +73,7 @@ security:
     tmpfs_access:
       enabled: false
 
-   encryption:
+  encryption:
     cryptography_library:
       provider: "openssl"
     data_in_transit:

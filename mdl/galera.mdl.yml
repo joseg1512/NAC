@@ -1,4 +1,5 @@
 ---
+
 metadata:
   name: &name "galera.mdl"
   purpose: "Imagen para nodos de un cluster MariaDB Galera"
@@ -24,15 +25,33 @@ cluster:
   replication:
     method: "synchronous"
     topology: "multi-master"
+    wsrep_provider: "/usr/lib64/galera-4/libgalera_smm.so"
+    wsrep_on: "ON"
+    binlog_format: "ROW"
 
   node_identity:
     wsrep_node_name: "placeholder"
-    wsrep_node_address: "ip address[:port]"
+    wsrep_node_address: "placeholder" # format: ip address[:port]
     description: >
       Cada nodo debe tener nombre único y dirección IP específica.
 
+  cluster_identity:
+    wsrep_cluster_address: "gcomm://placeholder"
+    description: >
+      Lista de IPs de todos los nodos del cluster.
+      Formato: gcomm://IP1:4567,IP2:4567,IP3:4567
+      Ejemplo: gcomm://192.168.1.1:4567,192.168.1.2:4567
+
   state_snapshot_transfer:
     wsrep_sst_method: "mariadb-backup"
+
+  storage_engine:
+    default_storage_engine: "InnoDB"
+    innodb_autoinc_lock_mode: 2
+    innodb_flush_log_at_trx_commit: 0
+
+  performance:
+    wsrep_slave_threads: 4
 
   communication:
     cluster_ports:
@@ -79,12 +98,13 @@ firewall:
       port: 4567
     - rule: 3
       name: "incremental state transfer"
-      direction: "input" #input/output/forward
-      protocol: "tcp" #tcp/udp
+      direction: "input"
+      protocol: "tcp"
       port: 4568
     - rule: 4
       name: "snapshot state transfer"
       direction: "input"
       protocol: "tcp"
       port: 4444
+
 ---
