@@ -1,0 +1,32 @@
+---
+
+metadata:
+  name: &name "nacmadb.mdl"
+  purpose: "Imagen base para servicios de base de datos MariaDB de la NAC"
+  version: "1.0"
+  role: "service"
+  inheritance:
+    - rocky10x.mdl
+    - mariadb.mdl
+    - galera.mdl
+    - keepalived.mdl
+  creation_date: "2026-02-16"
+  content:
+    - "Servidor de base de datos MariaDB"
+
+hardware:
+  mainboard:
+    cpu: 4
+    ram: "8192 MB"
+  storage:
+    - disk_id: "database"
+      action: "agregar"
+      disk_size: "150 GB"
+      provisioning: "thin"
+      partitioning: "manual"
+        - label: /var/lib/mysql
+        - type: lvm
+        - extensible: true
+        - partition_size: 150
+  network:
+    nics: 2

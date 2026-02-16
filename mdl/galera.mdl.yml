@@ -6,7 +6,6 @@ metadata:
   version: "1.0"
   role: "model"
   inheritance:
-    - rocky10x.img
   creation_date: "2026-01-25"
   content:
     - "Cluster de base de datos MariaDB"
@@ -30,13 +29,13 @@ cluster:
     binlog_format: "ROW"
 
   node_identity:
-    wsrep_node_name: "placeholder"
-    wsrep_node_address: "placeholder" # format: ip address[:port]
+    wsrep_node_name: "[node_name]"
+    wsrep_node_address: "[node_address]" # format: ip address[:port]
     description: >
       Cada nodo debe tener nombre único y dirección IP específica.
 
   cluster_identity:
-    wsrep_cluster_address: "gcomm://placeholder"
+    wsrep_cluster_address: "gcomm://[node_address]"
     description: >
       Lista de IPs de todos los nodos del cluster.
       Formato: gcomm://IP1:4567,IP2:4567,IP3:4567

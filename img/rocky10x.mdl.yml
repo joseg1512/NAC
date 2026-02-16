@@ -1,6 +1,6 @@
 ---
 metadata:
-  name: &name "rocky10x.img"
+  name: &name "rocky10x.mdl"
   purpose: "Imagen base para servicios de gestión de la NAC"
   version: "1.0"
   role: "base"
@@ -18,14 +18,14 @@ metadata:
 hardware:
   mainboard:
     arch: x86_64
-    cpu: 2
-    ram: "4096 MB"
+    cpu: [2]
+    ram: [4096 MB]
   storage:
     - disk_id: "system"
       action: "agregar"
-      disk_size: "50 GB"
-      provisioning: "thin"
-      partitioning: "automatic"
+      disk_size: [50 GB]
+      provisioning: [thin]
+      partitioning: [automatic]
       partitions:
         - label: efi
           type: fixed
@@ -59,13 +59,13 @@ networking:
       method: "static"
       ipv4:
         enabled: "true"
-        address: "172.24.50.11/24"
-        gateway: "172.24.50.1"
+        address: [tbd_internet_address]
+        gateway: [tbd_internet_gateway]
         dns:
-          - "8.8.8.8"
+          - [tbd_internet_dns]
 
   hostname: 
-      name: *name
+      name: [tbd_hostname]
 
 users:                             
   - username: "root"      
@@ -105,7 +105,7 @@ management:
   ssh:
     disable:
       - "root"
-    enable¨:
+    enable:
       - "nadmin"
 ---
 

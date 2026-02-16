@@ -25,7 +25,7 @@ Agregue la siguiente configuración con los valores específicos de su cluster:
 
 ```ini
 [mariadb]
-# Variables mandatorias wsrep
+# Variables wsrep
 wsrep_on = ON
 wsrep_provider = /usr/lib64/galera-4/libgalera_smm.so
 wsrep_cluster_address = gcomm://IP_NODO1,IP_NODO2,IP_NODO3
@@ -33,7 +33,7 @@ binlog_format = ROW
 
 # Identificación del nodo
 wsrep_node_name = NOMBRE_NODO
-wsrep_node_address = IP_ESTE_NODO
+wsrep_node_address = IP_NODO
 
 # Storage engine
 default_storage_engine = InnoDB
@@ -47,7 +47,7 @@ wsrep_sst_method = mariadb-backup
 wsrep_slave_threads = 4
 ```
 
-**Nota:** Reemplace los valores `NOMBRE_NODO`, `IP_ESTE_NODO`, `IP_NODO1`, `IP_NODO2`, `IP_NODO3` con los valores específicos de su infraestructura.
+**Nota:** Reemplace los valores `NOMBRE_NODO`, `IP_NODO`, `IP_NODO1`, `IP_NODO2`, `IP_NODO3` con los valores específicos.
 
 ## 3. SELinux
 
