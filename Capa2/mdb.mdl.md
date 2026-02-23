@@ -110,17 +110,42 @@ Salida esperada:
 
 ## 5. Firewall
 
-Ejecute los siguientes comandos para abrir el puerto de MariaDB en el firewall:
+Cree un archivo de reglas para nftables y cargue el ruleset:
 
 ```bash
-firewall-cmd --permanent --add-port=3306/tcp
-firewall-cmd --reload
+vi /etc/nftables.rules
+nft -f /etc/nftables.rules
 ```
 
-Verifique las reglas configuradas:
+Use el siguiente contenido (permite MariaDB en el puerto 3306/tcp):
+
+```nft
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+table inet filter {
+  chain input {
+    type filter hook input priority 0;
+    policy drop;
+
+    iifname "lo" accept
+    ct state established,related accept
+
+    tcp dport 3306 accept
+  }
+}
+```
+
+Verifique el ruleset cargado:
 
 ```bash
-firewall-cmd --list-ports
+nft list ruleset
 ```
 
-Salida esperada: `3306/tcp`
+Haga las reglas persistentes:
+
+```bash
+systemctl enable nftables
+cp /etc/nftables.rules /etc/sysconfig/nftables.conf
+```

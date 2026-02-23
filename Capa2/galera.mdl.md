@@ -70,20 +70,50 @@ Salida esperada debe incluir los puertos 4567, 4568 y 4444.
 
 ## 4. Firewall
 
-Ejecute los siguientes comandos para abrir los puertos de Galera en el firewall:
+Cree un archivo de reglas para nftables y cargue el ruleset:
 
 ```bash
-firewall-cmd --permanent --add-port=4567/tcp
-firewall-cmd --permanent --add-port=4567/udp
-firewall-cmd --permanent --add-port=4568/tcp
-firewall-cmd --permanent --add-port=4444/tcp
-firewall-cmd --reload
+vi /etc/nftables.rules
+nft -f /etc/nftables.rules
 ```
 
-Verifique las reglas configuradas:
+Use el siguiente contenido (habilita los puertos requeridos por Galera):
+
+```nft
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+table inet filter {
+  set galera_nodes {
+    type ipv4_addr
+    flags interval
+    elements = { IP_NODO1, IP_NODO2, IP_NODO3 }
+  }
+
+  chain input {
+    type filter hook input priority 0;
+    policy drop;
+
+    iifname "lo" accept
+    ct state established,related accept
+
+    ip saddr @galera_nodes tcp dport 4567 accept
+    ip saddr @galera_nodes udp dport 4567 accept
+    ip saddr @galera_nodes tcp dport 4568 accept
+    ip saddr @galera_nodes tcp dport 4444 accept
+  }
+}
+```
+
+Verifique el ruleset cargado:
 
 ```bash
-firewall-cmd --list-ports
+nft list ruleset
 ```
+Haga las reglas persistentes:
 
-Salida esperada: `4567/tcp 4567/udp 4568/tcp 4444/tcp`
+```bash
+systemctl enable nftables
+cp /etc/nftables.rules /etc/sysconfig/nftables.conf
+```
