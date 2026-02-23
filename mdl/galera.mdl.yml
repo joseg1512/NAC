@@ -35,7 +35,7 @@ cluster:
       Cada nodo debe tener nombre único y dirección IP específica.
 
   cluster_identity:
-    wsrep_cluster_address: "gcomm://[node_address]"
+    wsrep_cluster_address: "gcomm://[cluster_nodes]"
     description: >
       Lista de IPs de todos los nodos del cluster.
       Formato: gcomm://IP1:4567,IP2:4567,IP3:4567

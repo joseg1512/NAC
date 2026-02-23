@@ -5,7 +5,7 @@ metadata:
   purpose: "Imagen base para servicios de base de datos MariaDB de la NAC"
   version: "1.0"
   role: "service"
-  inheritance: ""
+  inheritance: "[parent_image]"
   creation_date: "2026-01-18"
   content:
     - "Servidor de base de datos MariaDB"
@@ -82,7 +82,7 @@ security:
 
 performance:
   innodb:
-    buffer_pool_size: "" # en bytes
+    buffer_pool_size: "[innodb_buffer_pool_size]" # en bytes
 
   connections:
     max_connections: 151 # default
