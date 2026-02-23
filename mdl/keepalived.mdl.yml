@@ -1,7 +1,7 @@
 ---
 
 metadata:
-  name: &name "keepalived.img"
+  name: &name "keepalived.mdl"
   purpose: "Imagen para servidores MariaDB con alta disponibilidad mediante VIP"
   version: "1.0"
   role: "model"
@@ -22,36 +22,44 @@ applications:
     packages:
       - "keepalived"
 
-services:
-  enable:
-    - "keepalived"
+keepalived:
+  vrrp:
+    instance_name: "[vrrp_instance_name]" # ej: VI_MAXSCALE
+    type: "[vrrp_mode]" # multicast|unicast
+    state: "[vrrp_state]" # MASTER|BACKUP
+    interface: "[vrrp_interface]" # ej: eth0
+    priority: "[vrrp_priority]" # 1-255
+    advert_int: 1
+    virtual_router_id: "[virtual_router_id]" # 1-255
+    virtual_ipaddress: "[vip_address]/[vip_prefix]" # ej: 192.168.10.50/24
+    unicast_self_ip: "[unicast_self_ip]" # requerido si vrrp_mode=unicast
+    unicast_peer_ip: "[unicast_peer_ip]" # IP del otro nodo (si son 2 nodos)
 
-ha:
-  keepalived:
-    vrrp:
-      instance_name: "[vrrp_instance_name]" # ej: VI_MAXSCALE
-      state: "[vrrp_state]" # MASTER|BACKUP
-      interface: "[vrrp_interface]" # ej: eth0
-      virtual_router_id: "[virtual_router_id]" # 1-255
-      priority: "[vrrp_priority]" # 1-255
-      advert_int: 1
+  authentication:
+    auth_type: "PASS"
+    auth_pass: "[vrrp_auth_pass]" # 8 chars
 
-      authentication:
-        auth_type: "PASS"
-        auth_pass: "[vrrp_auth_pass]" # 8 chars
+  tracking:
+    enabled: true
+    target: "maxscale"
 
-      virtual_ipaddress:
-        - "[vip_address]/[vip_prefix]" # ej: 192.168.10.50/24
+  checks:
+    - name: "check_maxscale"
+      description: "Verifica que MaxScale esté funcionando"
+      path: "/usr/local/bin/check_maxscale.sh"
+      interval: 10
+      
+  notify:
+    email:
+      smtp_server: "[smtp_server]"
+      smtp_port: 587
+      from: "[from_email]"
+      to: "[to_email]"
 
-      mode:
-        type: "[vrrp_mode]" # multicast|unicast
-        unicast_src_ip: "[unicast_src_ip]" # requerido si vrrp_mode=unicast
-        unicast_peer:
-          - "[unicast_peer_ip]" # IP del otro nodo (si son 2 nodos)
+    scripts:
+      - name: "notify_maxscale"
+        path: "/usr/local/bin/notify_maxscale.sh"
 
-    tracking:
-      enabled: true
-      target: "maxscale"
       
 security:
   selinux:
@@ -64,4 +72,9 @@ security:
         protocol: "vrrp"
         direction: "input"
         port: 112
+
+services:
+  enable:
+    - "keepalived"
+    
 ---
