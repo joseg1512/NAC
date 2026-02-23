@@ -16,7 +16,7 @@ hostname:
 
 applications:
   - group: "alta disponibilidad"
-    action: "agregar"
+    action: "add"
     description: >
       Keepalived para gestión de VIP failover automático.
     packages:
@@ -26,4 +26,42 @@ services:
   enable:
     - "keepalived"
 
+ha:
+  keepalived:
+    vrrp:
+      instance_name: "[vrrp_instance_name]" # ej: VI_MAXSCALE
+      state: "[vrrp_state]" # MASTER|BACKUP
+      interface: "[vrrp_interface]" # ej: eth0
+      virtual_router_id: "[virtual_router_id]" # 1-255
+      priority: "[vrrp_priority]" # 1-255
+      advert_int: 1
+
+      authentication:
+        auth_type: "PASS"
+        auth_pass: "[vrrp_auth_pass]" # 8 chars
+
+      virtual_ipaddress:
+        - "[vip_address]/[vip_prefix]" # ej: 192.168.10.50/24
+
+      mode:
+        type: "[vrrp_mode]" # multicast|unicast
+        unicast_src_ip: "[unicast_src_ip]" # requerido si vrrp_mode=unicast
+        unicast_peer:
+          - "[unicast_peer_ip]" # IP del otro nodo (si son 2 nodos)
+
+    tracking:
+      enabled: true
+      target: "maxscale"
+      
+security:
+  selinux:
+    port_contexts:
+      - port: 112
+        protocol: "vrrp"
+  firewall:
+    rules:
+      - name: "vrrp advertisements"
+        protocol: "vrrp"
+        direction: "input"
+        port: 112
 ---
