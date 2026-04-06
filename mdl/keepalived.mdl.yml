@@ -1,18 +1,15 @@
 ---
 
 metadata:
-  name: &name "keepalived.mdl"
-  purpose: "Imagen para servidores MariaDB con alta disponibilidad mediante VIP"
+  name: "keepalived.mdl"
+  purpose: "Modelo para servicio de IP virtual flotante con Keepalived"
   version: "1.0"
   role: "model"
   inheritance:
     - mariadb.img
   creation_date: "2026-xx-xx"
   content:
-    - "Alta disponibilidad con VIPs"
-
-hostname:
-  name: *name
+    - "Habilita alta disponibilidad con IP virtual flotante"
 
 applications:
   - group: "alta disponibilidad"
@@ -22,59 +19,94 @@ applications:
     packages:
       - "keepalived"
 
+networking:
+# Falta la configuracion inicial de las interfaces de red
+
 keepalived:
   vrrp:
-    instance_name: "[vrrp_instance_name]" # ej: VI_MAXSCALE
-    type: "[vrrp_mode]" # multicast|unicast
-    state: "[vrrp_state]" # MASTER|BACKUP
-    interface: "[vrrp_interface]" # ej: eth0
-    priority: "[vrrp_priority]" # 1-255
+    # Nombre del cluster precedido con el prefijo "vip_", por ejemplo: vip_maxscale
+    instance_name: "[vrrp_instance_name]"
+    type: "unicast"
+    # Debe haber un servidor master y un backup, ejemplo: MASTER o BACKUP
+    state: "[vrrp_state]"
+    # Interfaz de red del frente donde se asignará la VIP flotante
+    interface: "[vrrp_interface_front]"
+    # Prioridad del host para atender el servicio de Keepalived, mayor número implica mayor prioridad
+    priority: "[vrrp_priority]"                  # 1-255
+    # Intervalo en segundos entre anuncios VRRP enviados al nodo par
     advert_int: 1
-    virtual_router_id: "[virtual_router_id]" # 1-255
+    # Identificador numérico compartido entre todos los nodos del mismo grupo HA, debe ser idéntico en todos
+    virtual_router_id: "[virtual_router_id]"     # 1-255
     virtual_ipaddress: "[vip_address]/[vip_prefix]" # ej: 192.168.10.50/24
-    unicast_self_ip: "[unicast_self_ip]" # requerido si vrrp_mode=unicast
-    unicast_peer_ip: "[unicast_peer_ip]" # IP del otro nodo (si son 2 nodos)
+    # IP de la interfaz del nodo actual, usada para enviar y recibir heartbeats VRRP
+    unicast_src_ip: "[unicast_src_ip]"
+    # IP del nodo par, hacia donde se envían los heartbeats VRRP
+    unicast_peer_ip: "[unicast_peer_ip]"
 
   authentication:
     auth_type: "PASS"
-    auth_pass: "[vrrp_auth_pass]" # 8 chars
+    auth_pass: "[vrrp_auth_pass]"                # 8 chars
 
   tracking:
     enabled: true
+    # Servicio que determina si este nodo puede seguir como MASTER
     target: "maxscale"
+    checks:
+      - name: "check_maxscale"
+        description: "Verifica que MaxScale esté funcionando"
+        # Ruta absoluta al script que ejecuta la verificación de salud
+        path: "/usr/local/bin/check_maxscale.sh"
+        # Frecuencia en segundos con la que se ejecuta el check
+        interval: 10
 
-  checks:
-    - name: "check_maxscale"
-      description: "Verifica que MaxScale esté funcionando"
-      path: "/usr/local/bin/check_maxscale.sh"
-      interval: 10
-      
-  notify:
-    email:
-      smtp_server: "[smtp_server]"
-      smtp_port: 587
-      from: "[from_email]"
-      to: "[to_email]"
+  scripts:
+    notify:
+      path: "/usr/local/bin/notify.sh"
+      description: "Ajusta la ruta por defecto y notifica cambios de estado VRRP"
+      transitions:
+        MASTER:
+          actions:
+            # Elimina la ruta por defecto para que el nodo deje de exponer la interfaz de gestión
+            - remove_default_gateway
+        BACKUP:
+          actions:
+            # Restaura la ruta por defecto para que el nodo pueda ser gestionado remotamente
+            - add_default_gateway
+        FAULT:
+          actions:
+            # Restaura la ruta y reinicia MaxScale para intentar recuperar el servicio
+            - add_default_gateway
+            - restart_service
+  email:
+    # Identificador del nodo, aparece en el Subject de los correos de notificación
+    router_id: "[hostname_del_nodo]"
+    smtp_server: "mail.nac.ucr.ac.cr"
+    smtp_port: 587
+    smtp_connect_timeout: 30
+    # Nombre con el que el nodo se identifica al servidor SMTP en el saludo HELO
+    smtp_helo_name: "[hostname_del_nodo]"
+    # Activa el envío de correos automáticamente en cada transición de estado VRRP
+    smtp_alert: true
+    # Dirección de correo que aparece como remitente en las notificaciones
+    notification_email_from: "[email_del_servicio]"
+    # Lista de destinatarios de las notificaciones de estado
+    notification_email_to:
+      - "[email_del_servicio]"
 
-    scripts:
-      - name: "notify_maxscale"
-        path: "/usr/local/bin/notify_maxscale.sh"
+    
 
-      
 security:
   selinux:
-    port_contexts:
-      - port: 112
-        protocol: "vrrp"
+    enabled: true
   firewall:
     rules:
+      # VRRP usa el protocolo IP 112, no es TCP/UDP, no tiene número de puerto
       - name: "vrrp advertisements"
         protocol: "vrrp"
         direction: "input"
-        port: 112
 
 services:
   enable:
     - "keepalived"
-    
+
 ---
