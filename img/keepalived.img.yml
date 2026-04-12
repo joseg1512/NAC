@@ -1,0 +1,74 @@
+---
+
+metadata:
+  name: "keepalived.img"
+  purpose: "Imagen base para servicios de keepalived"
+  version: "1.0"
+  role: "image"
+  inheritance:
+    - keepalived.mdl
+  creation_date: "2026-04-12"
+
+
+keepalived:
+
+  email:
+    router_id: "MAXSCALE1"
+    smtp_server: "mail.nac.ucr.ac.cr"
+    smtp_port: 587
+    notification_email_from: "[email_del_servicio]"
+    notification_email_to:
+      - "[email_del_servicio]"
+
+
+  vrrp_instances:
+
+    - instance_name: "vip_maxscale"
+      type: "unicast"
+      state: "MASTER"
+      interface: "[ens_front]"           # pendiente: nombre de interfaz del frente
+      priority: 101       # 1-255
+      virtual_router_id: 1
+      virtual_ipaddress: "172.24.254.10/24"
+      unicast_src_ip: "172.24.126.11"
+      unicast_peer_ip: "172.24.126.12"
+
+  authentication:
+    auth_type: "PASS"
+    auth_pass: "[vrrp_auth_pass]"
+
+
+  tracking:
+    keepalived:
+      interval: 10
+      fall: 2
+      rise: 1
+    script:
+      name: "check_maxscale"
+      path: "/usr/local/bin/check_maxscale.sh"
+
+
+  scripts:
+    notify:
+      path: "/usr/local/bin/notify.sh"
+      transitions:
+        MASTER: [ remove_default_gateway ]
+        BACKUP: [ add_default_gateway ]
+        FAULT:  [ add_default_gateway, restart_service ]
+
+
+security:
+  selinux:
+    enabled: true
+  firewall:
+    rules:
+      - name: "vrrp advertisements"
+        protocol: "vrrp"
+        direction: "input"
+
+
+services:
+  enable:
+    - "keepalived"
+
+---
