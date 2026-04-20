@@ -1,0 +1,133 @@
+---
+# Required code adaptations for the VCL Controller
+code-adaptations:
+  scope: "Apache VCL core modules"
+  modules:
+    - module: "lib/VCL/Module/OS.pm"
+      changes:
+        - concern: "Operating system detection"
+          lines: "3624-3629"
+          description: >
+            Enable VMware ESXi detection so that ESXi hosts are correctly
+            identified as valid operating systems.
+
+        - concern: "OS module resolution"
+          lines: "3730-3734"
+          description: >
+            Adds an "if" condition to load ESXi modules
+
+        - concern: "Network validation" 
+          line: "3785"
+          description: >
+            $remote_ip is use to open/close restricted firewall ports.
+            Useful when remote IP is unstable. Habilita un rango más amplio de las conexiones fuente desde las cuales se puede conectar
+
+    - module: "lib/VCL/Module/OS/Linux/ESXi.pm"
+      changes:
+        - concern: "Module dependencies"
+          lines: "56-57"
+          description: >
+            Import the VCL Utils module to enable shared utility functions
+            required by ESXi-specific logic.
+
+        - concern: "Image metadata handling"
+          line: "90"
+          description: >
+            Update the invocation of create_currentimage_txt to align with
+            ESXi image handling requirements.
+
+        - concern: "Credential provisioning"
+          lines: "144-178"
+          description: >
+            Implement ESXi user creation, dynamic password generation, assignment
+            of administrative privileges, and synchronization of credentials with
+            the VCL database.
+        
+        - concern: "User creation changes"
+          lines: "160-161"
+          description: >
+            Change linux commands to BusyBox commands that are supported by ESXi
+
+        - concern: "Gives Admin permissions to the created user"
+          line: "163"
+          description: >
+            Grants access to inventory, Virutal machines and Datastores
+
+        - concern: "Exit incomplete function"
+          line: "293"
+          description: >
+            Exits enable_firewall_port function as soon as it is executed
+            because it is incomplete.
+        
+        - concern: "Exit incomplete function"
+          line: "321"
+          description: >
+            Exits get_cpu_core_count function as soon as it is executed
+            because it is incomplete.
+
+        - concern: "OS inheritance logic"
+          lines: "363-373"
+          description: >
+            Adapt legacy Linux/OSX logic so that ESXi is not incorrectly
+            excluded from OS processing flows. Calls subroutine as a
+            class method.
+
+        - concern: "Connectivity validation"
+          line: "346"
+          description: >
+            Remove a port-based connectivity validation to avoid false
+            negatives when managing ESXi hosts.
+            Synchronize host generated password with the one registered
+            in the VCL reservation and decides if the provisioning
+            ends with success or fails.
+
+    - module: "lib/VCL/Module/OS/Windows/Version_6.pm"
+      changes:
+        - concern: "Image preparation"
+          lines: "780"
+          description: >
+            Automate windows rearm consumption during image preparation
+            to ensure proper licensing state.
+
+        - concern: "rearm explicit execution"
+          lines: "786"
+          description: >
+            Restarts Windows activation period. Cleans licensing state
+            of the image.
+
+        - concern: "Change in XML configuration file"
+          lines: "1723"
+          description: >
+            Aligns XML configuration with the register change.
+            Now rearm behavior does not depends on the script
+            alone.
+
+        - concern: "Windows activation lifecycle"
+          lines: "583-624"
+          description: >
+            Reset the Windows activation period, decrement the rearm counter,
+            and restore the system licensing state.
+
+    - module: "lib/VCL/Module/OS/Windows.pm"
+      changes:
+        - concern: "License key support"
+          lines: "261-265"
+          description: >
+            Add activation keys for Windows Server 2019 and
+            Windows 10 Enterprise LTSC 2019.
+
+    - module: "lib/VCL/Module/OS/Linux.pm"
+      changes:
+        - concern: "OS classification"
+          line: "490"
+          description: >
+            Adjust condition to include ESXi among recognized operating systems.
+
+    - module: "lib/VCL/Module/Provisioning/VMware/VMware.pm"
+      changes:
+        - concern: "Provisioning module selection"
+          lines: "1192-1202"
+          description: >
+            Evaluate the active operating system type, detect ESXi hosts,
+            and assign the corresponding Perl OS module dynamically.
+---

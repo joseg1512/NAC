@@ -1,0 +1,209 @@
+---
+metadata:
+  name: "vclweb.mdl"
+  purpose: "Apache VCL web portal for users and administration"
+  version: "1.0"
+  role: "web"
+  application: "Apache VCL Web (vclweb)"
+  upstream_version: "2.5.2"
+  operating_system: "Rocky Linux 10.x"
+  inheritance:
+    - rocky10x.img.yaml
+    - vcl-2.5.2-web-source
+  creation_date: "2026-02-07"
+  doc_wiki_main: ""   # PENDING
+  doc_wiki_repo: ""   # PENDING
+  content:
+    - "Apache HTTP Server"
+    - "PHP runtime for VCL Web"
+    - "Apache VCL Web frontend"
+    - "LDAP / Local authentication"
+    - "MariaDB integration"
+
+# Adjust to final specs
+hardware:
+  mainboard:
+    cpu: 4
+    ram: "8192 MB"
+  network:
+    nics: 2
+
+applications: # Re
+  - group: "Web Server (Apache)"
+    action: "add"
+    description: >
+      Apache HTTP Server used to serve the Apache VCL web frontend,
+      handle TLS termination, and enforce access controls.
+    packages:
+      - "httpd"
+      - "httpd-tools"
+      - "mod_ssl"
+
+  - group: "PHP" # Revisar lista de paquetes contra documentación de instalación de Apache y las necesidades de la UCR
+    action: "add"
+    version: "8.x"         # Adjust to the version supported by the distro and by VCL
+    description: >
+      PHP runtime and required extensions to execute Apache VCL Web.      
+    packages:
+      - "php"
+      - "php-cli"
+      - "php-common"
+      - "php-mysqlnd"
+      - "php-ldap"
+      - "php-gd"
+      - "php-mbstring"
+      - "php-xml"
+      - "php-json"        # Redundant in PHP >= 8, kept for compatibility
+      - "php-opcache"
+      - "php-openssl"
+
+  - group: "Database Client"
+    action: "add"
+    description: >
+      MariaDB client libraries required by the VCL web frontend.
+    packages:
+      - "mariadb-client"
+
+  - group: "Cryptography Tools"
+    action: "add"
+    packages:
+      - "openssl"
+
+deployment:
+  source:
+    action: "use"
+    description: "VCL web source code"
+    workspace_path: "vcl-2.5.1/web"
+
+  target:
+    action: "deploy"
+    docroot: "/var/www/html/vcl"
+    ownership:
+      user: "apache"
+      group: "apache"
+    file_permissions:
+      directories: "0755"
+      files: "0644"
+
+vcl-configuration:
+  web:
+    timezone: "America/Costa_Rica"
+    default_locale: "en_US"
+    baseurl: "https://<host>/vcl"
+    homeurl: "https://<host>/vcl/"
+    ssloffload: 0
+    cookie_domain: "<host>"
+    emails:
+      help: "vcl@nac.ucr.ac.cr"
+      error: "vcl@nac.ucr.ac.cr"
+      envelope_sender: "vcl@nac.ucr.ac.cr"
+    logging:
+      querylogging: 1
+      xmlrpclogging: 1
+
+  apache:
+    vhost:
+      server_name: "vcl.nac.ucr.ac.cr"   # PENDING
+      base_path: "/vcl"
+      force_https: true
+      hsts: true
+      allow_override: true
+    logging:
+      access_log: "/var/log/httpd/access_log"
+      error_log: "/var/log/httpd/error_log"
+
+  php:
+    sapi: "mod_php"
+    settings:
+      opcache_enabled: true
+
+  authentication:
+    mechanisms:
+      - name: "Nube Académica Computacional"
+        type: "ldap"
+        action: "enable"
+      - name: "Cuenta Local"
+        type: "local"
+        action: "enable"
+
+  secrets:
+    database:
+      host: "<db-host>"
+      name: "vcl"
+      username: "vcluser"
+      password: "<secret>"
+    crypto:
+      cryptkey: "<secret>"     # openssl rand 32 | base64
+      pemkey: "<secret>"
+
+integrations:
+  database:
+    action: "integrate"
+    engine: "MariaDB"
+    host: "bdadmin.nac.ucr.ac.cr"         # PENDING
+    port: 3306
+    database: "vcl"
+    user: "vcluser"
+    requirements:
+      - "Network access from the web server to the database server"
+
+  ldap:
+    action: "integrate"
+    server: "idm01.nac.ucr.ac.cr"
+    base_dn: "cn=users,cn=accounts,dc=nac,dc=ucr,dc=ac,dc=cr"
+    user_dn_template: "uid=%s,cn=users,cn=accounts,dc=nac,dc=ucr,dc=ac,dc=cr"
+    bind_user: "vcl"
+    bind_password: "<secret>"
+    attributes:
+      login: "uid"
+      firstname: "givenname"
+      lastname: "sn"
+      email: "mail"
+
+security:
+  selinux: "enforcing" # Falta hacer configuración de Selinux
+  firewall:
+    enabled: true
+    allow:
+      - { proto: "tcp", port: 80,  source: "<trusted-nets>" }
+      - { proto: "tcp", port: 443, source: "<trusted-nets>" }
+  hardening:
+    - "ONLINEDEBUG=0"
+    - "HTTPS required"
+    - "Ensure docroot permissions and ownership"
+    - "Restrict access to .ht-inc/, cryptkey/, maintenance/ (via .htaccess/vhost)"
+
+# operations:
+#   logging:
+#     action: "enable"
+#     paths:
+#       web_access: "/var/log/httpd/access_log"
+#       web_error: "/var/log/httpd/error_log"
+#       vcl_app: "(per ERROREMAIL / error handler)"
+#   backup:
+#     action: "define"
+#     include:
+#       - ".ht-inc/conf.php"
+#       - ".ht-inc/secrets.php"              # store in a vault/secure backup
+#       - "TLS certificates"                 # if TLS termination is on the web host
+#   maintenance:
+#     action: "define"
+#     checks:
+#       - "Maintenance page responds"
+#       - "Database connectivity"
+#       - "LDAP login"
+#       - "Access to main UI"
+
+# management:
+#   access:
+#     admin_group: "wheel / NAC group"        # PENDING: define in VCL (privileges)
+#   ssh:
+#     notes:
+#       - "Web server management is done via SSH on the host, not from within VCL"
+#   change_control:
+#     action: "define"
+#     items:
+#       - "VCL web upgrade procedure (2.5.1 -> future)"
+#       - "Secrets rotation procedure"
+#       - "Rollback procedure"
+---

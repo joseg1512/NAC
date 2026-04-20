@@ -1,0 +1,212 @@
+---
+metadata:
+  name: &name "vclctl.img"
+  purpose: "Base image of the VCL Controller service (Management Node)"
+  version: "1.0"
+  role: "service"
+  operating-system: "Rocky Linux 10.x"
+  inheritance:
+    - rocky10x.img           # Declarative base image
+  creation-date: "2026-01-16"
+  doc-wiki-main: ""         # PENDING
+  doc-wiki-repo: ""         # PENDING
+  content:
+    - "VCL Controller Service (vcld)"
+        - "Reservation management and provisioning"
+        - "Integration with provisioning modules"
+
+# Explicit combination rules with the base image
+inheritance-rules:
+  applications: "append"                 # Add packages/groups without removing those from the base
+  services: "merge-by-name"              # Merge by service name (enable/disable according to this image)
+  users: "append-override-by-username"   # Add new users and override policy by username
+  security: "override-fields"            # Security fields override those from the base
+  management: "merge-by-key"             # Merge by functional key (e.g., 'ssh_policy', 'controller')
+  networking: "override-fields"          # This image uses profiles; overrides fixed address from the base
+  hardware: "adjust-profile"             # Profile adjustment (CPU/RAM/disk) when applicable
+
+# Profile adjustments for Controller role (only differences relative to the base)
+hardware:
+  mainboard:
+    cpu: 4
+    ram: "8192 MB"
+  network:
+    nics: 2
+
+# network profile is declared, not a fixed IP
+networking:
+  profiles:
+    interfaces:
+        - interface: "local"
+          action: remove
+        - interface: "management"
+          action: remove
+        - interface: "perimeter"
+          type: "ethernet"
+          vlan: "1050"
+          required: "true"
+          method: "static"
+          addressing: "ipv4-static"
+          dns-policy: "external"
+        - interface: "local"
+          type: "ethernet"
+          vlan: "1050"
+          required: "true"
+          method: "static"
+          ipv4: # Needs to be adjusted
+            enabled: "true"
+            address: "172.24.50.11/24"
+            gateway: "172.24.50.1"
+            dns:
+              - "8.8.8.8"
+  hostname:
+    name: *name
+
+# Account policies for the service
+users:
+  - username: "vcl"
+    action: "add"
+    disable-console: true
+    groups:
+      - "vcl"
+    purpose: "Controller service account"
+
+# Conceptual inventory of components (no paths or commands)
+applications:
+  - group: "VCL Service"
+    action: "add"
+    description: >
+      Components required to run the VCL controller and communicate with
+      the supported managers/hypervisors.
+    packages:
+      - "perl"
+      - "openssh"
+      - "openssh-devel"
+      - "nmap"
+      - "gcc"
+      - "make"
+      - "expat-devel"
+      - "libxml2-devel"
+      - "openssl-devel"
+      - "krb5-libs"
+      - "krb5-devel"
+      - "mysql/mariadb"
+      - "xmlsec1-openssl"
+    perl modules:
+      - "perl-DBI"
+      - "perl-DBD-MySQL"
+      - "perl-Crypt-CBC"
+      - "perl-Crypt-OpenSSL-RSA"
+      - "perl-Crypt-Rijndael"
+      - "perl-Digest-SHA1"
+      - "perl-Exception-Class-Base"
+      - "perl-Frontier-Client"
+      - "perl-HTTP-Headers"
+      - "perl-IO-String"
+      - "perl-JSON"
+      - "perl-LWP-UserAgent"
+      - "perl-Mail-Mailer"
+      - "perl-Net-Jabber"
+      - "perl-Net-Netmask"
+      - "perl-Net-Ping-External"
+      - "perl-Net-SSH-Expect"
+      - "perl-Object-InsideOut"
+      - "perl-RPC-XML-Client"
+      - "perl-Text-CSV_XS"
+      - "perl-XML-Simple"
+      - "perl-YAML"
+      
+vcl-configuration:
+  controller:
+    name: "vcld"
+    fqdn: "vclctl.lab.ucr.ac.cr"  # Fully Qualified Domain Name of the VCL Management Node (must resolve in DNS) / (Placeholder)
+    logging:
+    file: "/var/log/vcld.log"
+    level: "info"
+    pidfile: "/var/run/vcld.pid"
+      
+# Database
+  database:
+    name: "vcl"
+    engine: "MariaDB"
+    host: "vcl-db.lab.ucr.ac.cr" # Hostname or FQDN where the MariaDB server for VCL is running / (Placeholder)
+    ssl-enabled: false
+    username: "vcluser"
+    
+  authentication: # Configuración de la conexión con el ldap (En diferencias del codigo), declarar los parámetros de autenticación
+      
+  credentials:
+    windows-nodes:
+      admin-credentials:
+        purpose: "Windows Administrator password used during provisioning"
+        username: "Administrator"
+        secret-ref: "WINDOWS-ROOT-PASSWORD"
+
+    database:
+      writer:
+        purpose: "MariaDB account used by the management node for write operations"
+        username: "vcluser"
+        secret-ref: "DB-WRITER-PASSWORD"
+
+    xmlrpc:
+      api:
+        purpose: "Credentials for VCL web frontend XML-RPC calls"
+        username: "vclsystem@Local"
+        secret-ref: "XMLRPC-PASSWORD"
+
+    jabber:
+      im:
+        purpose: "IM notifications via Jabber"
+        username: "vcl"
+        secret-ref: "JABBER-PASSWORD"
+
+  # notifications
+  notifications:
+    email:
+      enabled: true
+      return-path: "vcl@nac.ucr.ac.cr" # Email address used as the return-path for automated VCL notifications
+    jabber:
+      enabled: false
+      
+  provisioning-backends:
+    enabled:
+      - "libvirt"
+      - "VMware"
+      - "xCAT"
+    available:          # Based on lib/VCL/Module/Provisioning/*
+      - "xCAT"
+      - "VMware"
+      - "libvirt"
+      - "openstack"
+      - "vbox"
+      - "docker"
+      - "one"
+      # VCL authentication
+        
+    # xmlpc
+    xmlrpc:
+      enabled: true
+      endpoint: "https://vcl.lab.ucr.ac.cr/vcl/index.php?mode=xmlrpccall" # URL of the VCL web frontend XML-RPC endpoint used by vcld / (Placeholder)
+      username: "vclsystem@Local"
+
+# Desired state of services (intent, not procedures)
+services:
+  enable:
+    - "vcld"
+  disable:
+
+security:
+  firewall: "enabled"        # Policy: functional firewall via nftables
+
+# Code adaptations reference
+code-adaptations:
+  scope: "Apache VCL core modules"
+  reference:
+    file: "./vcl-controller.code-adaptations.yaml"
+    description: >
+      Externalized specification with precise module-level modifications (areas and line
+      ranges) to adapt Apache VCL to UCR requirements.
+    intent: >
+      Track and implement these code changes; the referenced file contains the
+      list of required modifications.
+---
