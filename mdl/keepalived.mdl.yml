@@ -82,21 +82,23 @@ keepalived:
       rise: 1       # éxitos consecutivos para restaurar la prioridad del nodo
 
     # Script que keepalived ejecuta para verificar la salud del servicio
-    script:
-      name: "check_maxscale"
-      path: "/usr/local/bin/check_maxscale.sh"
-      # description: "Verifica que MaxScale esté funcionando"
+    # Reemplazar con el nombre real (ej: check_maxscale)
+    "[script_name]":
+      path: "[path/to/script]"   # directorio donde se encuentra el script
+      file: "[script_file]"      # nombre del archivo
 
 
   scripts:
+    # Reemplazar con el nombre real (ej: notify_maxscale)
+    "[notify_script_name]":
+      path: "[path/to/script]"     # directorio donde reside el script
+      file: "[script_file]"        # nombre del archivo ejecutable
 
-    notify:
-      path: "/usr/local/bin/notify.sh"
-      # description: "Ajusta la ruta por defecto y notifica cambios de estado VRRP"
+      # Acciones a ejecutar en cada transición de estado VRRP
       transitions:
-        MASTER: [ remove_default_gateway ]
-        BACKUP: [ add_default_gateway ]
-        FAULT:  [ add_default_gateway, restart_service ]
+        MASTER: "[transitions_master]"   # acciones al convertirse en MASTER
+        BACKUP: "[transitions_backup]"   # acciones al convertirse en BACKUP
+        FAULT:  "[transitions_fault]"    # acciones al entrar en FAULT
 
 
 security:

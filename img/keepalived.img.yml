@@ -27,7 +27,7 @@ keepalived:
       type: "unicast"
       state: "MASTER"
       interface: "[ens_front]"           # pendiente: nombre de interfaz del frente
-      priority: 101       # 1-255
+      priority: 255      # 1-255
       virtual_router_id: 1
       virtual_ipaddress: "172.24.254.10/24"
       unicast_src_ip: "172.24.126.11"
@@ -43,14 +43,15 @@ keepalived:
       interval: 10
       fall: 2
       rise: 1
-    script:
-      name: "check_maxscale"
-      path: "/usr/local/bin/check_maxscale.sh"
+    check_maxscale:
+      path: "/usr/local/bin"
+      file: "check_maxscale.sh"
 
 
   scripts:
-    notify:
-      path: "/usr/local/bin/notify.sh"
+    notify_maxscale:
+      path: "/usr/local/bin"
+      file: "notify.sh"
       transitions:
         MASTER: [ remove_default_gateway ]
         BACKUP: [ add_default_gateway ]
