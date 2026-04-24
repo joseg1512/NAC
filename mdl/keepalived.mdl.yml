@@ -82,23 +82,23 @@ keepalived:
       rise: 1       # éxitos consecutivos para restaurar la prioridad del nodo
 
     # Script que keepalived ejecuta para verificar la salud del servicio
-    # Reemplazar con el nombre real (ej: check_maxscale)
+    # Reemplazar con el nombre real ej: check_maxscale
     "[script_name]":
-      path: "[path/to/script]"   # directorio donde se encuentra el script
+      path: "[/path/to/script]"   # directorio donde se encuentra el script
       file: "[script_file]"      # nombre del archivo
 
 
   scripts:
-    # Reemplazar con el nombre real (ej: notify_maxscale)
-    "[notify_script_name]":
-      path: "[path/to/script]"     # directorio donde reside el script
+    # Reemplazar con el nombre real ej: notify_maxscale
+    "[script_name]":
+      path: "[/path/to/script]"     # directorio donde reside el script
       file: "[script_file]"        # nombre del archivo ejecutable
 
       # Acciones a ejecutar en cada transición de estado VRRP
       transitions:
-        MASTER: "[transitions_master]"   # acciones al convertirse en MASTER
-        BACKUP: "[transitions_backup]"   # acciones al convertirse en BACKUP
-        FAULT:  "[transitions_fault]"    # acciones al entrar en FAULT
+        MASTER: "[transitions_to_master]"   # acciones al convertirse en MASTER
+        BACKUP: "[transitions_to_backup]"   # acciones al convertirse en BACKUP
+        FAULT:  "[transition_to_fault]"    # acciones al entrar en FAULT
 
 
 security:
